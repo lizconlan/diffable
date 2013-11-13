@@ -1,6 +1,6 @@
 # Diffable
 
-Provides a mixin that can be used to extend any ActiveRecord object to provide diff 
+Diffable provides a mixin that can be used to extend any ActiveRecord object to provide diff 
 functionality. Calling the diff method compares the receiver against another 
 object and returns a Hash of differences found (presented as a description of 
 the changes between the second object and the receiver - as if trying to restore
@@ -66,7 +66,7 @@ a **deleted** object's data, they can be excluded at the model level using
 
     class ModelB < ActiveRecord::Base
       include Diffable
-      set_excluded_from_copy :ignore_me
+      set_excluded_fields :ignore_me
     end
 
 ### Conditional fields

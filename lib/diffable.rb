@@ -1,17 +1,29 @@
 require "diffable/version"
 
+# :main: README.rdoc
+
+##
+# Diffable provides a mixin that can be used to extend any ActiveRecord object 
+# to provide diff functionality. Calling the diff method compares the receiver 
+# against another object and returns a Hash of differences found (presented as 
+# a description of the changes between the second object and the receiver - as 
+# if trying to restore the calling object from its replacement).
+
 module Diffable
-  def self.included base
+  def self.included base # :nodoc:
     base.send :include, InstanceMethods
     base.extend ClassMethods
   end
   
   module InstanceMethods
+    ##
+    # Produces a Hash containing the differences between the calling object
+    # and the object passed in as a parameter
     def diff(other)
       check_class_compatibility(self, other)
       
-      self_attribs = self.get_attributes(self.class.excluded_from_copy)
-      other_attribs = other.get_attributes(other.class.excluded_from_copy)
+      self_attribs = self.get_attributes(self.class.excluded_fields)
+      other_attribs = other.get_attributes(other.class.excluded_fields)
       
       change = compare_objects(self_attribs, other_attribs, self, other)
       
@@ -24,11 +36,20 @@ module Diffable
       change
     end
     
+    ##
+    # Fetches the attributes of the calling object, exluding the +id+ field 
+    # and any fields specified passed as an array of symbols via the +excluded+
+    # parameter
     def get_attributes(excluded)
       attribs = attributes.dup
-      attribs.delete_if { |key, value| (!excluded.nil? and excluded.include?(key)) or key == "id" }
+      attribs.delete_if { |key, value|
+        (!excluded.nil? and excluded.include?(key)) or key == "id" }
     end
     
+    ##
+    # Uses reflection to fetch the eligible associated objects for the current 
+    # object, excluding parent objects and child objects that do not include
+    # the Diffable mixin
     def reflected_names(obj)
       classes = obj.reflections
       class_names = []
@@ -78,8 +99,8 @@ module Diffable
         
         if ident_in_list?(idnt, previous_obj_idents)
           #pre-existing thing, compare the differences...
-          current_attribs = current_sub.get_attributes(current_sub.class.excluded_from_copy)
-          previous_attribs = previous_sub.get_attributes(previous_sub.class.excluded_from_copy)
+          current_attribs = current_sub.get_attributes(current_sub.class.excluded_fields)
+          previous_attribs = previous_sub.get_attributes(previous_sub.class.excluded_fields)
           
           obj = compare_objects(current_attribs, previous_attribs, current_sub, previous_sub, obj)
           
@@ -153,10 +174,10 @@ module Diffable
       change
     end
     
-    def preserve_deleted_obj(deleted, excluded_from_copy=self.class.excluded_from_copy)
+    def preserve_deleted_obj(deleted, excluded_fields=self.class.excluded_fields)
       obj = {}
       #get attributes of object marked for deletion...
-      attribs = deleted.get_attributes(deleted.class.excluded_from_copy)
+      attribs = deleted.get_attributes(deleted.class.excluded_fields)
       #...and copy them for preservation
       attribs.keys.each do |att|
         value = nil
@@ -214,21 +235,66 @@ module Diffable
   end
   
   module ClassMethods
-    attr_accessor :excluded_from_copy, :unique_within_group, :conditional_fields
+    ##
+    # Holds an array of excluded fields which will not be used
+    # for comparison tests or when copying deleted values
+    attr_reader :excluded_fields
+    
+    ##
+    # String value corresponding to the field that uniquely identifies
+    # a child record from among its siblings 
+    # (should not be id unless id is being generated)
+    attr_reader :unique_within_group
+    
+    ##
+    # Holds an array of fields which will be added to a modified change Hash
+    # (regardless of whether its value has changed or not) unless there are 
+    # no other changes
+    attr_reader :conditional_fields
+    
+    ##
+    # A shortcut, used to quickly check whether a class implements Diffable
     attr_reader :diffable
     
     @diffable = true
     
-    def set_excluded_from_copy(*h)
-      @excluded_from_copy = []
-      h.each { |key| eval(%Q|@excluded_from_copy << "#{key.to_s}"|) }
-    end
-    
+    ##
+    # Sets the class's conditional_fields values.
+    #
+    # If required, should be placed in the model definition code:
+    #
+    #    class ModelA < ActiveRecord::Base
+    #      include Diffable
+    #      set_conditional_fields :meta
+    #    end
     def set_conditional_fields(*h)
       @conditional_fields = []
       h.each { |key| eval(%Q|@conditional_fields << "#{key.to_s}"|) }
     end
     
+    ##
+    # Sets the class's excluded_fields values.
+    #
+    # If required, should be placed in the model definition code:
+    #
+    #     class ModelB < ActiveRecord::Base
+    #       include Diffable
+    #       set_excluded_fields :ignore_me, :test
+    #     end
+    def set_excluded_fields(*h)
+      @excluded_fields = []
+      h.each { |key| eval(%Q|@excluded_fields << "#{key.to_s}"|) }
+    end
+    
+    ##
+    # Sets the class's unique_within_group value
+    #
+    # If required, should be placed in the model definition code:
+    #
+    #     class ModelC < ActiveRecord::Base
+    #       include Diffable
+    #       set_unique_within_set :generated_identifier
+    #     end
     def set_unique_within_group(value)
       eval(%Q|@unique_within_group = "#{value.to_s}"|)
     end

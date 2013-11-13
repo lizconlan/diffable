@@ -31,7 +31,7 @@ end
 class AltSubrec < ActiveRecord::Base
   include Diffable
   set_unique_within_group :ident
-  set_excluded_from_copy :ignore_me
+  set_excluded_fields :ignore_me
   set_conditional_fields :tracker
 end
 
