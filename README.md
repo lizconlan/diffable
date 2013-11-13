@@ -40,20 +40,20 @@ You can then call the `diff` method on any instance of that model class:
 
 ## Behaviour
 
-There are 3 different types of change that can be returned by the diff method 
-- new, deleted and modified. These are indication using a `:change_type` 
+There are 3 different types of change that can be returned by the diff method: 
+modified, new and deleted. These are indicated using a `:change_type` 
 key/value within the results Hash.
 
-When an object is flagged as modified, its identifier and any of the altered 
+When an object is flagged as **modified**, its identifier and any of the altered 
 fields are returned, e.g.:
 
     {:change_type => "modified", :id => 42, :name => "test1"}
 
-When an object is flagged as new, only its identifier is returned. Sample output:
+When an object is flagged as **new**, only its identifier is returned. Sample output:
 
     {:change_type => "new", :id => 42}
 
-When an object is flagged as deleted, all of its attributes are returned in 
+When an object is flagged as **deleted**, all of its attributes are returned in 
 the diff Hash. Sample output:
 
     {:change_type => "deleted", :id => 42, :name => "test", :desc => "db test"}
@@ -94,7 +94,7 @@ field as `:id` is unlikely to be suitable.
       has_many :catalogue_entries
     end
     
-    class CatalogueEntries < ActivRecord::Base
+    class CatalogueEntries < ActiveRecord::Base
       include Diffable
       belongs_to :model_d
       set_unique_within_group :generated_identifier
