@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["lizconlan@gmail.com"]
   spec.description   = %q{Facilitates Active::Record object diffing}
   spec.summary       = %q{Adds ability to compare 2 Active::Record objects; returns the differences as a hash}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/lizconlan/diffable"
   spec.license       = "MIT"
   
   spec.files         = `git ls-files`.split($/)
